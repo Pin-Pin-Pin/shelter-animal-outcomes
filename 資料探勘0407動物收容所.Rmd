@@ -1,0 +1,256 @@
+---
+title: "資料探勘0407"
+author: "b064020009"
+date: "2021/4/5"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# 資料探索
+```{r}
+#使用data.table讀取大型資料的速度比使用資料框快上數倍
+#install.packages("data.table")
+library(data.table) 
+data <- fread("C:/Users/User/Desktop/大四下/資料探勘/hw1/hw1/datasets/shelter_animal_outcomes/train.csv")
+kaggle<-fread("C:/Users/User/Desktop/大四下/資料探勘/hw1/hw1/datasets/shelter_animal_outcomes/test.csv")
+str(data)
+summary(data)#看OutcomeType種類分布然後平均分散到train跟test
+```
+#刪掉不要的欄位
+```{r}
+data=subset(data,select=c(-AnimalID,-Name ,-DateTime,-Breed,-Color))
+kaggle_id=kaggle$ID
+kaggle=subset(kaggle,select=c(-ID,-Name ,-DateTime,-Breed,-Color))
+#library(data.table) 
+#test_id=subset(test,select=PassengerId)
+#test=subset(test,select=c(-Name,-Ticket,-PassengerId,-Cabin))#7沒有survived
+```
+
+
+```{r}
+summary(data$OutcomeType)
+summary(data$OutcomeSubtype)
+ 
+
+
+
+```
+
+#缺失值狀況
+```{r}
+#install.packages("plyr")
+library(plyr)
+summary(complete.cases(data)) #都
+summary(complete.cases(kaggle))
+#沒有缺值
+```
+
+#欄位資料轉換
+```{r}
+sum(is.na(data$OutcomeSubtype))
+sum(is.na(data$SexuponOutcome))
+```
+
+```{r}
+#unique(train$Fare)#248筆
+#unique(train$Cabin)#148筆
+#summary(train)
+data$OutcomeType<-as.factor(data$OutcomeType)
+data$OutcomeSubtype<-as.factor(data$OutcomeSubtype)
+data$AnimalType <-as.factor(data$AnimalType)
+data$SexuponOutcome<-as.factor(data$SexuponOutcome)
+str(data)
+summary(data)
+```
+```{r}
+#unique(train$Fare)#248筆
+#unique(train$Cabin)#148筆
+#summary(train)
+kaggle$AnimalType <-as.factor(kaggle$AnimalType)
+kaggle$SexuponOutcome<-as.factor(kaggle$SexuponOutcome)
+str(kaggle)
+summary(kaggle)
+```
+因為OutcomeSubtype應該有太多空白的值(13612)，加上OutcomeSubtype應該是OutcomeType下面的分類(照變數字面意思)，所以也刪掉
+```{r}
+data=subset(data,select=-OutcomeSubtype)
+```
+把空白的轉換補值
+SexuponOutcome缺的那一筆直接刪除
+```{r}
+data=data[-3175,]
+```
+處理AgeuponOutcome的轉換
+```{r}
+#unique(data$AgeuponOutcome)
+#1month=30.5day=
+#1week=7day
+#1year=12month=366day
+#data<-data[-which(data$AgeuponOutcome==""),]#刪掉age是空白的row，反正才十幾筆
+#單位都用year，未滿1歲=0歲
+#若字串不含years=0 years
+data$AgeuponOutcome[grep("months",data$AgeuponOutcome)]<-"0"
+data$AgeuponOutcome[grep("month",data$AgeuponOutcome)]<-"0"
+data$AgeuponOutcome[grep("weeks",data$AgeuponOutcome)]<-"0"
+data$AgeuponOutcome[grep("week",data$AgeuponOutcome)]<-"0"
+data$AgeuponOutcome[grep("days",data$AgeuponOutcome)]<-"0"
+data$AgeuponOutcome[grep("day",data$AgeuponOutcome)]<-"0"
+
+data$AgeuponOutcome[grep("12",data$AgeuponOutcome)]<-"12"
+data$AgeuponOutcome[grep("11",data$AgeuponOutcome)]<-"11"
+data$AgeuponOutcome[grep("15",data$AgeuponOutcome)]<-"15"
+data$AgeuponOutcome[grep("10",data$AgeuponOutcome)]<-"10"
+data$AgeuponOutcome[grep("14",data$AgeuponOutcome)]<-"14"
+data$AgeuponOutcome[grep("15",data$AgeuponOutcome)]<-"15"
+data$AgeuponOutcome[grep("16",data$AgeuponOutcome)]<-"16"
+data$AgeuponOutcome[grep("13",data$AgeuponOutcome)]<-"13"
+data$AgeuponOutcome[grep("17",data$AgeuponOutcome)]<-"17"
+data$AgeuponOutcome[grep("18",data$AgeuponOutcome)]<-"18"
+data$AgeuponOutcome[grep("19",data$AgeuponOutcome)]<-"19"
+data$AgeuponOutcome[grep("20",data$AgeuponOutcome)]<-"20"
+
+data$AgeuponOutcome[grep("1 year",data$AgeuponOutcome)]<-"1"
+data$AgeuponOutcome[grep("2 years",data$AgeuponOutcome)]<-"2"
+data$AgeuponOutcome[grep("4 years",data$AgeuponOutcome)]<-"4"
+data$AgeuponOutcome[grep("5 years",data$AgeuponOutcome)]<-"5"
+data$AgeuponOutcome[grep("7 years",data$AgeuponOutcome)]<-"7"
+data$AgeuponOutcome[grep("3 years",data$AgeuponOutcome)]<-"3"
+data$AgeuponOutcome[grep("9 years",data$AgeuponOutcome)]<-"9"
+data$AgeuponOutcome[grep("6 years",data$AgeuponOutcome)]<-"6"
+data$AgeuponOutcome[grep("8 years",data$AgeuponOutcome)]<-"8"
+data$AgeuponOutcome[grep("0 years",data$AgeuponOutcome)]<-"0"
+
+```
+轉換
+```{r}
+unique(data$AgeuponOutcome)
+which(data$AgeuponOutcome=="")
+data$AgeuponOutcome[which(data$AgeuponOutcome=="")]
+#先刪掉好了
+data<-data[-which(data$AgeuponOutcome==""),]
+which(data$AgeuponOutcome=="")
+```
+```{r}
+data$AgeuponOutcome<-as.integer(data$AgeuponOutcome)
+str(data$AgeuponOutcome)
+```
+分測試訓練 等下要重分
+```{R}
+#set.seed(1)
+#id<-sample(1:nrow(dummy_data),nrow(dummy_data)*0.8)
+#train<-dummy_data[id,]
+#<-dummy_data[-id,]
+
+set.seed(1)
+id<-sample(1:nrow(data),nrow(data)*0.8)
+train<-data[id,]
+test<-data[-id,]
+```
+#預測
+
+```{r}
+install.packages("dummies")
+require(dummies)  # 轉換虛擬變數的套件
+dummy_data <- dummy.data.frame(data)
+```
+
+##決策樹
+```{r}
+#install.packages("tree"
+library(tree)
+set.seed(2)
+
+names(test)[1] <- "Adoption"
+names(test)[2] <- "Died"
+names(test)[3] <- "Euthanasia"
+names(test)[4] <- "Return_to_owner"
+names(test)[5] <- "Transfer"
+
+names(train)[1] <- "Adoption"
+names(train)[2] <- "Died"
+names(train)[3] <- "Euthanasia"
+names(train)[4] <- "Return_to_owner"
+names(train)[5] <- "Transfer"
+ 			
+y.test<-test[1:5]
+#Adoption+Died+Euthanasia+Return_to_owner+Transfer
+tree.am<-tree(OutcomeType~.,train)
+tree.pred<-predict(tree.am,test,type="vote")
+table(tree.pred,y.test)#正確率147+75/153+44+55+16=/0.821比train.test比例(0.63)多了20%
+#summary(test)
+#要FACOR還是數字
+#TREE()怎麼寫
+#install.packages("MLmetrics")
+library(MLmetrics)
+MultiLogLoss(tree.pred, y.test)
+#把outcome拆成幾個欄位
+```
+不要用dummy
+```{r}
+tree.am<-tree(OutcomeType~.,train)
+tree.pred.train<-predict(tree.am,train)
+plot(tree.pred.train)
+#varImpPlot(tree.pred.train)
+
+#tree.pred<-predict(tree.am,test,type="vote")
+table(tree.pred.train,train$OutcomeType)#正確率147+75/153+44+55+16=/0.821比train.test比例(0.63)多了20%
+#summary(test)
+#要FACOR還是數字
+#TREE()怎麼寫
+#install.packages("MLmetricrf.pred = predict(rf.outcomes, newdata = outcome.train, type = "vote")
+
+# Plotting relative importance of the variables
+
+  
+# make predicion on animal outcome
+#rf.pred.test = predict(rf.outcomes, outcome.test, type = "vote")
+
+
+
+```
+
+```{R}
+train$OutcomeType
+```
+
+隨機森林
+```{r}
+set.seed(1)
+#Random Forest
+rf_mod <- randomForest(OutcomeType ~ .,
+                       data = train, 
+                       ntree = 500,
+                       importance = TRUE)
+sampsize=c(Adoption=500, Died=50, Euthanasia=100,Return_to_owner=200,Transfer=500)
+
+rf_mod
+plot(rf_mod, ylim=c(0,1))
+legend('topright', colnames(rf_mod$err.rate), col=1:6, fill=1:6)
+
+
+importance    <- importance(rf_mod)
+varImportance <- data.frame(Variables = row.names(importance), 
+                            Importance = round(importance[ ,'MeanDecreaseGini'],2))
+
+varImportance
+plot(rf_mod)
+varImpPlot(rf_mod)
+
+#testing the model on remaining training set and calculating log loss
+prediction <- predict(rf_mod, train, type = 'vote')
+prediction[is.na(prediction)] = 0
+MultiLogLoss(train$OutcomeType,prediction)
+sum(is.na(prediction))
+
+write.csv(prediction,file="pred.csv",row.names=FALSE)
+
+#Applying the model on the test set
+prediction <- predict(rf_mod, test, type = 'vote')
+solution <- data.frame('ID' = test$ID, prediction)
+write.csv(solution, 'rf_solution.csv', row.names = F)
+
+
+
+```
